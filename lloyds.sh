@@ -15,7 +15,7 @@ main() {
 
     read -p "Do you want to create it? (y/n) " yn;
     case "$yn" in
-      [Yy]* ) create_encrypted $1 $2 $3;;
+      [Yy]* ) create_file $1 $2 $3;;
       [Nn]* ) exit;;
       * ) echo "Please answer yes or no.";;
     esac
@@ -59,12 +59,32 @@ main() {
   echo -e "$out";
 }
 
-create_encrypted() {
-  read -s -p "Enter your memorable phrase: " phrase;
-  if [ ${#phrase} -lt 6 ]; then
+create_file() {
+  # Check if we want to create an encrypted file, or plain one.
+  read -p "Encrypted? (y/n) " yn;
+  create_memorable_phrase;
+  case "$yn" in
+    [Yy]* ) create_encrypted $1 $2 $3;;
+    [Nn]* ) create_plain $1 $2 $3;;
+    * ) echo "Please answer yes or no.";;
+  esac
+}
+
+create_memorable_phrase() {
+  read -s -p "Enter your memorable phrase: " MEMORABLE_PHRASE;
+  if [ ${#MEMORABLE_PHRASE} -lt 6 ]; then
     echo "Memorable phrase too short"; exit;
   fi
+}
 
+create_plain() {
+  echo "$MEMORABLE_PHRASE" > $PASSWORDFILE;
+
+  echo "Created plain password file: $PASSWORDFILE. Running program again.";
+  main $1 $2 $3;
+}
+
+create_encrypted() {
   echo "$phrase" | gpg -ac --output $PASSWORDFILE;
   # Ensure that gpg returned sucessfully (we encrypted it)
   if [ $? -ne 0 ]; then
@@ -75,13 +95,14 @@ create_encrypted() {
   main $1 $2 $3;
 }
 
-# Passfile variable.
+# Passfile variable, default to .lloyds if not password file is given or it
+# does not exist.
 PASSWORDFILE="$HOME/.lloyds";
 if [ ! -z $4 ]; then
   PASSWORDFILE=$4;
 fi
 
-# Some naive checks.
+# Some naive checks on arguments.
 if [[ $# -lt 3 || $# -gt 4 ]]; then
   usage;
 fi
