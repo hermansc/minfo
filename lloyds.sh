@@ -12,11 +12,29 @@ main() {
   # Check that passfile exist
   if [ ! -f "$PASSWORDFILE" ]; then
     echo "File does not exist: $PASSWORDFILE";
+
+    read -p "Do you want to create it? (y/n) " yn;
+    case "$yn" in
+      [Yy]* ) create_encrypted $1 $2 $3;;
+      [Nn]* ) exit;;
+      * ) echo "Please answer yes or no.";;
+    esac
+
     exit 1;
   fi
 
-  # Read content of first line, as secret word.
-  read -r SECRET_WORD < $PASSWORDFILE;
+  # Check if it is GPG encrypted
+  if [ "$(file -b "$PASSWORDFILE")" == "PGP armored data message" ]; then
+    SECRET_WORD=`gpg < "$PASSWORDFILE" | head -n 1`;
+
+    # Ensure that gpg returned sucessfully (we decrypted it)
+    if [ $? -ne 0 ]; then
+      exit 1;
+    fi
+  else
+    # Read content of first line, as secret word.
+    SECRET_WORD=`head -n 1 $PASSWORDFILE`;
+  fi
 
   # Ensure string length is longer than requested chars.
   len=${#SECRET_WORD};
@@ -41,12 +59,29 @@ main() {
   echo -e "$out";
 }
 
+create_encrypted() {
+  read -s -p "Enter your memorable phrase: " phrase;
+  if [ ${#phrase} -lt 6 ]; then
+    echo "Memorable phrase too short"; exit;
+  fi
+
+  echo "$phrase" | gpg -ac --output $PASSWORDFILE;
+  # Ensure that gpg returned sucessfully (we encrypted it)
+  if [ $? -ne 0 ]; then
+    exit 1;
+  fi
+
+  echo "Created encrypted password file: $PASSWORDFILE. Running program again.";
+  main $1 $2 $3;
+}
+
 # Passfile variable.
 PASSWORDFILE="$HOME/.lloyds";
 if [ ! -z $4 ]; then
   PASSWORDFILE=$4;
 fi
 
+# Some naive checks.
 if [[ $# -lt 3 || $# -gt 4 ]]; then
   usage;
 fi
