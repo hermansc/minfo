@@ -11,7 +11,7 @@ exit 1;
 main() {
   # Check that passfile exist
   if [ ! -f "$PASSWORDFILE" ]; then
-    echo "File does not exist: $PASSWORDFILE";
+    echo "** File does not exist: $PASSWORDFILE **";
 
     read -p "Do you want to create it? (y/n) " yn;
     case "$yn" in
@@ -24,11 +24,12 @@ main() {
   fi
 
   # Check if it is GPG encrypted
-  if [ "$(file -b "$PASSWORDFILE")" == "PGP armored data message" ]; then
-    SECRET_WORD=`gpg < "$PASSWORDFILE" | head -n 1`;
+  if [[ "$(file -b "$PASSWORDFILE")" =~ "PGP" ]]; then
+    SECRET_WORD=`gpg --no-mdc-warning < "$PASSWORDFILE" | head -n 1`;
 
     # Ensure that gpg returned sucessfully (we decrypted it)
     if [ $? -ne 0 ]; then
+      echo "Error: gpg failed. Exiting";
       exit 1;
     fi
   else
@@ -39,13 +40,13 @@ main() {
   # Ensure string length is longer than requested chars.
   len=${#SECRET_WORD};
   if [[ $len -lt $1 || $len -lt $2 || $len -lt $3 ]]; then
-    echo "Requested number than was higher than string length ($len chars)";
+    echo "Error: Requested number than was higher than string length ($len chars)";
     exit 1;
   fi
 
   # Ensure requested number is positive
   if [[ $1 -le 0 || $2 -le 0 || $3 -le 0 ]]; then
-    echo "Requested number can not be zero or negative";
+    echo "Error: Requested number can not be zero or negative";
     exit 1;
   fi
 
@@ -66,32 +67,39 @@ create_file() {
   case "$yn" in
     [Yy]* ) create_encrypted $1 $2 $3;;
     [Nn]* ) create_plain $1 $2 $3;;
-    * ) echo "Please answer yes or no.";;
+    * ) echo "Warning: Please answer yes or no.";;
   esac
 }
 
 create_memorable_phrase() {
   read -s -p "Enter your memorable phrase: " MEMORABLE_PHRASE;
   if [ ${#MEMORABLE_PHRASE} -lt 6 ]; then
-    echo "Memorable phrase too short"; exit;
+    echo "Error: Memorable phrase too short"; exit;
   fi
 }
 
 create_plain() {
   echo "$MEMORABLE_PHRASE" > $PASSWORDFILE;
 
-  echo "Created plain password file: $PASSWORDFILE. Running program again.";
+  echo "** Created plain password file: $PASSWORDFILE. Running program again. **";
   main $1 $2 $3;
 }
 
 create_encrypted() {
-  echo "$phrase" | gpg -ac --output $PASSWORDFILE;
+  command -v gpg >/dev/null 2>&1 || { 
+    echo >&2 "Warning: Could not find binary 'gpg'. Ensure that it installed and on your PATH. Falling back to plain text storage of your memorable phrase.";  
+    create_plain;
+    return 1;
+  }
+
+  echo -e "\n** Memorable phrase saved. Now encrypt it with a password. **"
+  echo "$MEMORABLE_PHRASE" | gpg -ac --output $PASSWORDFILE;
   # Ensure that gpg returned sucessfully (we encrypted it)
   if [ $? -ne 0 ]; then
     exit 1;
   fi
 
-  echo "Created encrypted password file: $PASSWORDFILE. Running program again.";
+  echo "** Created encrypted password file: $PASSWORDFILE. Running program again. **";
   main $1 $2 $3;
 }
 
