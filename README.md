@@ -10,21 +10,21 @@ querying.
 
 ### Usage
 
-    $ lloyds 3 6 9
-    ** File does not exist: ~/.lloyds **
+    $ minfo 3 6 9
+    ** File does not exist: ~/.minfo **
     Do you want to create it? (y/n) y
     Encrypted? (y/n) y
     Enter your memorable phrase: foobarfoo
     ** Memorable phrase saved. Now enter a password for encryption. **
     Enter your passphrase: <password>
     Repeat passphrase: <password>
-    ** Created encrypted password file: ~/.lloyds. Running program again. **
+    ** Created encrypted password file: ~/.minfo. Running program again. **
     Enter passphrase: <password>
     3     6      9
     --------------
     o     r      o
 
-    $ lloyds 3 6 9
+    $ minfo 3 6 9
     Enter passphrase: <password>
     3     6      9
     --------------
@@ -32,14 +32,14 @@ querying.
 
 You can also invoke it by specifying the path:
 
-    $ lloyds 3 4 10 ~/.lloyds
+    $ minfo 3 4 10 ~/.minfo
 
 ### Install
 
 Just download the .sh script, and place it e.g. in your home directory. Then
 symlink it:
 
-    $ ln -s ~/lloyds.sh /usr/local/bin/lloyds
+    $ ln -s ~/minfo.sh /usr/local/bin/minfo
 
 Or whatever solution you prefer.
 
