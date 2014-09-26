@@ -103,9 +103,9 @@ create_encrypted() {
   main $1 $2 $3;
 }
 
-# Passfile variable, default to .lloyds if not password file is given or it
+# Passfile variable, default to .minfo if not password file is given or it
 # does not exist.
-PASSWORDFILE="$HOME/.lloyds";
+PASSWORDFILE="$HOME/.minfo";
 if [ ! -z $4 ]; then
   PASSWORDFILE=$4;
 fi
