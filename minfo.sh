@@ -25,10 +25,11 @@ main() {
 
   # Check if it is GPG encrypted
   if [[ "$(file -b "$PASSWORDFILE")" =~ "PGP" ]]; then
-    SECRET_WORD=`gpg --no-mdc-warning < "$PASSWORDFILE" | head -n 1`;
+    read -s -p "Passphrase for decryption? " pass;
+    SECRET_WORD=`echo $pass | gpg --batch --passphrase-fd 0 --decrypt "$PASSWORDFILE" | head -n 1`;
 
     # Ensure that gpg returned sucessfully (we decrypted it)
-    if [ $? -ne 0 ]; then
+    if [ "$SECRET_WORD" == "" ]; then
       echo "Error: gpg failed. Exiting";
       exit 1;
     fi
